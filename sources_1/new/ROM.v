@@ -35,62 +35,88 @@ if(!rst) DATA=16'h00;
       
 if(rst)  // outputs the data (opcode) pointed by ADDR
       begin
-      case(ADDR)  //TODO: Address is initially stored at B << 8 | C
-      8'd0:  DATA=16'h0000; 
-      8'd1:  DATA=16'h1702; //lda 32h
-      8'd2:  DATA=16'h0032;  
+      case(ADDR)  
+      //load the keyinputs
+      8'd0:  DATA=16'h1300;  //MOV KEY, R0
+      8'd1:  DATA=16'h0000; 
+      8'd2:  DATA=16'h0000;
       
-      8'd3:  DATA=16'h1702; //jump to 0
-      8'd4:  DATA=16'h0033; // lda 33h
-      8'd5:  DATA=16'h0000; 
-      8'd6:  DATA=16'h0000; 
+      8'd3:  DATA=16'h1400; //MOV KEY, R1 
+      8'd4:  DATA=16'h0000; 
+      8'd5:  DATA=16'h0000;
+       
+      8'd6:  DATA=16'h1500; //MOV KEY, R2 
       8'd7:  DATA=16'h0000; 
-      8'd8:  DATA=16'h0000; 
-      8'd9:  DATA=16'h0000; 
-      8'd10:  DATA=16'h0001;
-      8'd11:  DATA=16'h00; 
-      8'd12:  DATA=16'h00; 
-      8'd13:  DATA=16'h00; 
-      8'd14:  DATA=16'h00; 
-      8'd15:  DATA=16'h00; 
+      8'd8:  DATA=16'h0000;
+     
+      8'd9:  DATA=16'h1600; //MOV KEY, R3 
+      8'd10:  DATA=16'h0000;
+      8'd11:  DATA=16'h0000;
+      
+       
+      8'd12:  DATA=16'h1702; //lda
+      8'd13:  DATA=16'h007F; 
+      8'd14:  DATA=16'h1902; //ldc
+      8'd15:  DATA=16'h0014; //20 in dec
 
-      8'd16:  DATA=16'h00;
-      8'd17:  DATA=16'h00;
-      8'd18:  DATA=16'h00;
-      8'd19:  DATA=16'h00;
-      8'd20:  DATA=16'h10;
-      8'd21:  DATA=16'h00;  
-      8'd22:  DATA=16'h00;
-      8'd23:  DATA=16'h00;
-      8'd24:  DATA=16'h00;
-      8'd25:  DATA=16'h00;
-      8'd26:  DATA=16'h00;
-      8'd27:  DATA=16'h00;
-      8'd28:  DATA=16'h00;
-      8'd29:  DATA=16'h00;
-      8'd30:  DATA=16'h00;
-      8'd31:  DATA=16'h00;
-      8'd32:  DATA=16'h00;
-      8'd33:  DATA=16'h00; 
-      8'd34:  DATA=16'h00; 
-      8'd35:  DATA=16'h00;
-      8'd36:  DATA=16'h00;
-      8'd37:  DATA=16'h00;
-      8'd38:  DATA=16'h00;
-      8'd39:  DATA=16'h00;
-      8'd40:  DATA=16'h00;
-      8'd41:  DATA=16'h00;
-      8'd42:  DATA=16'h00;
-      8'd43:  DATA=16'h00;
-      8'd44:  DATA=16'h00;
-      8'd45:  DATA=16'h00;
-      8'd46:  DATA=16'h00;
-      8'd47:  DATA=16'h00;
-      8'd48:  DATA=16'h00;
-      8'd49:  DATA=16'h00;
-      8'd50:  DATA=16'h1234; //jump to 0
-      8'd51:  DATA=16'h0000;
-      8'd52:  DATA=16'h00;
+      8'd16:  DATA=16'h3BD8; //JMP C if PORTD < A 
+      
+      8'd17:  DATA=16'h1702; //lda
+      8'd18:  DATA=16'hFFFE;
+      8'd19:  DATA=16'hABE0;//AND PORTB, A
+      
+      
+      8'd20:  DATA=16'h1702; //lda
+      8'd21:  DATA=16'h0001;
+      8'd22:  DATA=16'hABE1;//OR PORTB, A
+      
+      
+      8'd23:  DATA=16'h1902; //ldc
+      8'd24:  DATA=16'h0000;
+      
+      
+      8'd25:  DATA=16'h1702; //lda
+      8'd26:  DATA=16'h0001;
+      
+      8'd27:  DATA=16'h7BD5; //JMP R0!=A to C
+      
+      8'd28:  DATA=16'h1702; //lda
+      8'd29:  DATA=16'h0002;
+      8'd30:  DATA=16'h8BD5; //JMP R1!=A to C
+
+      8'd31:  DATA=16'h1702; //lda
+      8'd32:  DATA=16'h0003;
+      8'd33:  DATA=16'h9BD5; //JMP R2!=A to C
+
+      8'd34:  DATA=16'h1702; //lda
+      8'd35:  DATA=16'h0004;
+      8'd36:  DATA=16'hABD5; //JMP R3!=A to C
+      
+      8'd37:  DATA=16'h1902; //ldc
+      8'd38:  DATA=16'h0030;
+      
+      
+      8'd39:  DATA=16'h1802; //ldb
+      8'd40:  DATA=16'h0001;
+      
+      8'd41:  DATA=16'h74C0; //AND A, SP1, Breg
+      8'd42:  DATA=16'hBCD4; //JUMP to C if A == B
+      
+      
+      8'd43:  DATA=16'h1702; //lda
+      8'd44:  DATA=16'h000D;
+      
+      8'd45:  DATA=16'hAEB0; //AND PORTB, A
+      8'd46:  DATA=16'h0001; //JMP
+      8'd47:  DATA=16'h0000; 
+      
+      8'd48:  DATA=16'h1702;  
+      8'd49:  DATA=16'h0002;
+      8'd50:  DATA=16'hAEB1; //OR PORTB, A
+      
+      
+      8'd51:  DATA=16'h0001; //JMP
+      8'd52:  DATA=16'h0000; 
       8'd53:  DATA=16'h00;
       8'd54:  DATA=16'h00;
       8'd55:  DATA=16'h00;

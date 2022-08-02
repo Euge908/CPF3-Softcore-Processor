@@ -21,35 +21,7 @@
 
 //Processor based on SimpleProcV5.v implemented by Sir dupo
 
-/*
-Assumptions:
-The servo motor would go to 180 degrees if it receives 1 and go to 0 degrees if it receives a 0
-Light sensor would give a discrete value between 0-255
 
-Registers needed in Making the components work:
-
-Output Buffer Register [32][8] -> LCD Display
-
-
-Col Input Register (4 bits) -> Column pins of the Keypad
-Row Output Register (4 bits) -> Row pins of the Keypad
-ADC0 Input Register (8 bits) -> Light Sensor
-Din0 Register (1 bit) -> Toggle Switch
-Bout0 Register (1 bit) -> Servo Motor
-
-*/
-
-/*
-Implementing IR Notes:
-dpop (4 bits) +
-ALUin1 (4 bits) +
-ALUin2 (4 bits) +
-dirdp (4 bits) +
-_________________
-IR (must be 16 bits)
-
-
-*/
 
 module SimpleProcV5(
 
@@ -155,41 +127,45 @@ always@(posedge clk)
             end
       if(rst)
             begin
-    
-                if(IR == 0)begin
-                    state = 0;
-                    PC = PC + 1;
-                end
-                else begin
                 
                 
                     case(state)
-                    3'd0: begin     //Fetch
+                    3'd0: begin
+                        state = state + 1;
+                    end
+                    
+                    3'd1: begin     //Fetch
                         MAR = PC;
                         state = state + 1'b1;
                         
                         IR = MBR;
                         PC = PC + 1; //this makes it confusing to read the output on the testbench, but at least this is the simplest fix of incrementing the PC
-
+                        
+                        //control words
+                        OP1 = IR[15:12];
+                        OP2 = IR[11:8];
+                        OP3 = IR [7:4];
+                        OP4 = IR[3:0];
+                        
+                        
+                        
+//                        $display("\nIR: %d, PC: %d\n", MBR, PC);
 //                        $display("IR: %d\n MBR: %d\n", IR, MBR);
 
 
                         
                     end
+                    
                     //state 1
-                    3'd1: begin      //Decode and Execute
+                    3'd2: begin      //Decode and Execute
 
                         //Latched Values of Input registers
                         SP1Latched = SP1;
                         ADC0Latched = ADC0;
                         PORTDLatched = PORTD; //toggle connected to D0
 
-                        //control words
-                        OP1 = IR[15:12];
-                        OP2 = IR[11:8];
-                        OP3 = IR [7:4];
-                        OP4 = IR[3:0];
-                            
+
+                        
                         //LW Reg Direct
                         if (OP1 == 4'd1 && OP3 == 4'd0 && OP4 == 4'd2) begin
                             state = state + 1;
@@ -236,24 +212,59 @@ always@(posedge clk)
                             state = 0;
                         
                         end
+                        
                         //ALU Instruction Format: Perform Operations on A and B
-                        else if(OP2 == 4'd0 && OP3 == 4'd0 && OP4 == 4'd0)begin
-                            case(OP1)
-                            4'd0: ACC=ACC; // Buffer
-                            4'd1: ACC=ACC&BREG;
-                            4'd2: ACC=ACC|BREG;
-                            4'd3: ACC=~BREG; 
-                            4'd4: ACC=ACC^BREG;
-                            4'd5: ACC=ACC+BREG;
-                            4'd6: ACC=ACC-BREG; 
-                            4'd7: ACC=ACC*BREG;
-                            4'd8: ACC=ACC/BREG;
-                            default: temp = temp; //do nothing
+                        else if((OP4 == 4'd0 || OP4 == 4'd1) || (OP4 >= 4'd10 && OP4 <= 4'd15))begin
+//                        $display("HELLOHELLOHELLO");
+//                        $display("HELLOHELLOHELLO");
 
+//                        $display("PD: %d, state: %h, OP1: %h, OP2: %h, OP3: %h, OP4: %h", PC, state, OP1, OP2, OP3, OP4);
+
+                        
+                            case(OP2) //second Reg
+                                4'd1: secondReg = KeypadResult;
+                                4'd2: secondReg = ADC0Latched;
+                                4'd3: secondReg = PORTDLatched;
+                                4'd4: secondReg = SP1Latched;
+                                4'd5: secondReg = MAR;
+                                4'd6: secondReg = PC;
+                                4'd7: secondReg = R0;
+                                4'd8: secondReg = R1;
+                                4'd9: secondReg = R2;
+                                4'd10: secondReg = R3;
+                                4'd11: secondReg = ACC;
+                                4'd12: secondReg = BREG;
+                                4'd13: secondReg = C;
+                                4'd14: secondReg = PORTB;
+                                4'd15: secondReg = MBR;
+                                default: secondReg = secondReg ; //do nothing
                             endcase
                             
+                            case(OP3) //third reg
+                                4'd1: thirdReg = KeypadResult;
+                                4'd2: thirdReg  = ADC0Latched;
+                                4'd3: thirdReg  = PORTDLatched;
+                                4'd4: thirdReg  = SP1Latched;
+                                4'd5: thirdReg  = MAR;
+                                4'd6: thirdReg  = PC;
+                                4'd7: thirdReg  = R0;
+                                4'd8: thirdReg  = R1;
+                                4'd9: thirdReg  = R2;
+                                4'd10: thirdReg   = R3;
+                                4'd11: thirdReg  = ACC;
+                                4'd12: thirdReg   = BREG;
+                                4'd13: thirdReg   = C;
+                                4'd14: thirdReg  = PORTB;
+                                4'd15: thirdReg  = MBR;
+                                default: thirdReg  = thirdReg  ; //do nothing
+                            endcase
+                            
+                            
+//                        $display("secondReg: %h, thirdReg: %h", secondReg, thirdReg);
+//                        $display("HELLOHELLOHELLO");
+//                        $display("HELLOHELLOHELLO");   
 //                            $display ("ALU CODE: %h: ACC = %h\n", OP3, ACC);
-                            state = 0;
+                            state = state + 1;
                         end
                         
                         //Jump Instruction Format                                            
@@ -333,22 +344,13 @@ always@(posedge clk)
                                 
                             endcase
                                 
-                            $display("firstReg: %d, secondReg: %d, thirdReg: %d, PC: %d, MBR: %d", firstReg, secondReg, thirdReg, PC, MBR);
+//                            $display("firstReg: %d, secondReg: %d, thirdReg: %d, PC: %d, MBR: %d", firstReg, secondReg, thirdReg, PC, MBR);
 
                                 
                             state=state+1'b1;
                         end
                         
                         
-                        
-                        //LW Reg Indirect
-                        else if (OP1 == 4'd1 && OP3 == 4'd0 && OP4 == 4'd3) begin
-                            //Do nothing and fetch operand
-                            state = state + 1'b1;
-                        end                        
-
-
-  
 
                              
                     end
@@ -356,21 +358,63 @@ always@(posedge clk)
                     
                     
                     //execute (state 2)
-                    3'd2: begin 
+                    3'd3: begin 
                         //jump immediate
-                        if(OP1 == 4'd0 && OP2 == 4'd0 && OP3==4'd0 && OP4 == 4'd1) begin 
-                            //Do nothing. Wait for next state to fetch the jump data                
-                            //fetch the jump data and store it to PC
-                            $display("PC: %d, MBR: %d\n", PC, MBR);
-                            PC = MBR;
-                            $display("NEW JUMP ADDRESS: %d\n", PC, MBR);
+                        
+                        //NOP
+                        if(OP1 == 0 && OP2 == 0 && OP3 == 0 && OP4 == 0) begin
                             state = 0;
                         end
+                        else if(OP1 == 4'd0 && OP2 == 4'd0 && OP3==4'd0 && OP4 == 4'd1) begin 
+                            //Do nothing. Wait for next state to fetch the jump data                
+                            //fetch the jump data and store it to PC
+//                            $display("PC: %d, MBR: %d\n", PC, MBR);
+                            PC = MBR;
+//                            $display("NEW JUMP ADDRESS: %d\n", PC, MBR);
+                            state = 0;
+                        end
+                        //ALU Op
                         
-                        //branch instructions
-                        if(OP4 >= 4'd4 && OP4 <=4'd9) begin
-                            $display("thirdReg: %d, PC: %d, MBR: %d", thirdReg, PC, MBR);
+                        else if((OP4 == 4'd0 || OP4 == 4'd1) || (OP4 >= 4'd10 && OP4 <= 4'd15))begin
+//                           $display("PC: %h, OP4: %h", PC, OP4);
+                               
+                               
+                            case (OP4)
+                                4'd0: firstReg = secondReg & thirdReg;
+                                4'd1: firstReg = secondReg | thirdReg;
+                                4'd10: firstReg = ~secondReg;
+                                4'd11: firstReg = secondReg ^ thirdReg;
+                                4'd12: firstReg = secondReg + thirdReg;
+                                4'd13: firstReg = secondReg - thirdReg;
+                                4'd14: firstReg = secondReg * thirdReg;
+                                4'd15: firstReg = secondReg / thirdReg;
                             
+                            endcase
+                            
+                            case(OP1) //first reg
+                                4'd3: R0 = firstReg;
+                                4'd4: R1 = firstReg;
+                                4'd5: R2 = firstReg;
+                                4'd6: R3 = firstReg;
+                                4'd7: ACC = firstReg;
+                                4'd8: BREG = firstReg;
+                                4'd9: C = firstReg;
+                                4'd10: PORTB = firstReg;
+                                default: firstReg= firstReg; //do nothing
+                            endcase
+                            
+//                            $display("PC %d, FirstReg: %d; FirstReg Code %d", PC, firstReg, OP1);
+//                            $display("OP1: %h; OP2: %h, OP3: %h, OP4: %h\n", OP1, OP2, OP3, OP4);
+                            
+                            state = state + 1;
+    
+      
+                        end
+                        //branch instructions
+                        else if(OP4 >= 4'd4 && OP4 <=4'd9) begin
+                            $display("firstReg: %d, secondReg: %d, thirdReg: %d, OP4: %d, PC: %d, MBR: %d", firstReg, secondReg, thirdReg, OP4, PC, MBR);
+                            $display("firstReg: == secondReg: %d", firstReg == secondReg);
+
                             case(OP4)
                                 
                                 4'd4:
@@ -416,10 +460,10 @@ always@(posedge clk)
                                                         
                         end
                         //LW Direct
-                        if (OP1 == 4'd1 && OP3 == 4'd0 && OP4 == 4'd2) begin
+                        else if (OP1 == 4'd1 && OP3 == 4'd0 && OP4 == 4'd2) begin
                               //wait for data to be loaded
-                              $display("Word to be loaded: %d\n", MBR);
-                              $display("PC: %d\n", PC);
+//                              $display("Word to be loaded: %d\n", MBR);
+//                              $display("PC: %d\n", PC);
 
                              case(OP2) 
                                 4'd3: R0 = MBR;
@@ -436,32 +480,23 @@ always@(posedge clk)
                             PC = PC + 1;
                             state = state + 1;
                            
-                        end                            
+                        end      //end of lw direct                      
                         
-                        //LW Indirect
-                        else if (OP1 == 4'd1 && OP3 == 4'd0 && OP4 == 4'd3) begin
-                            //Do nothing and fetch operand
-                            stack = PC;
-                            PC = MBR;
-                            state = state + 1'b1;
-                        end
                         
                     end//end of if 3'd2
 
                     //execute (state 3)
-                    3'd3: begin
-                        //LW Indirect
-                        if(OP4 >= 4'd4 && OP4 <=4'd9) begin
-                            //if false condition for branch                                    
-                        end
+                    3'd4: begin
                     
                         //LW direct reg
                         if(OP1 == 4'd1 && OP3 == 4'd0 && OP4 == 4'd2) begin 
                             state = 0;
                         end 
 
-
-
+                        else if((OP4 == 4'd0 || OP4 == 4'd1) || (OP4 >= 4'd10 && OP4 <= 4'd15))begin
+                            state = 0;
+                        end
+                        
                         else if (OP1 == 4'd1 && OP3 == 4'd0 && OP4 == 4'd3) begin
                             //Do nothing and fetch operand
                             case(OP2) 
@@ -483,9 +518,12 @@ always@(posedge clk)
                         end 
                     end//end of 3'd3
                   
-                  
+                3'd4:
+                begin
+                    state = 0;
+                end
+                
                 endcase//end of state switch case 
-            end//end nop
         end  // !rst
           
    end // end always module
